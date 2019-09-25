@@ -166,7 +166,7 @@ defmodule Assent.Strategy.OAuth2 do
   defp authentication_params(:private_key_jwt, config) do
     alg = Config.get(config, :jwt_algorithm, "RS256")
 
-    with {:ok, pem}             <- load_private_key(config),
+    with {:ok, pem}             <- __load_private_key__(config),
          {:ok, _private_key_id} <- Config.fetch(config, :private_key_id) do
       jwt_authentication_params(alg, pem, config)
     end
@@ -202,7 +202,8 @@ defmodule Assent.Strategy.OAuth2 do
     end
   end
 
-  defp load_private_key(config) do
+  @doc false
+  def __load_private_key__(config) do
     case Config.fetch(config, :private_key_path) do
       {:ok, path}    -> File.read(path)
       {:error, _any} -> Config.fetch(config, :private_key)

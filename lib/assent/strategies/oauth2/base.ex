@@ -30,6 +30,7 @@ defmodule Assent.Strategy.OAuth2.Base do
   @callback default_config(Keyword.t()) :: Keyword.t()
   @callback normalize(Keyword.t(), map()) :: {:ok, map()} | {:ok, map(), map()} | {:error, term()}
   @callback get_user(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
+  @callback callback(Keyword.t(), map()) :: {:ok, map()} | {:error, term()}
 
   @doc false
   defmacro __using__(_opts) do
