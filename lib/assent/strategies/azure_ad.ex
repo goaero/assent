@@ -1,19 +1,35 @@
-defmodule Assent.Strategy.AzureOAuth2 do
+defmodule Assent.Strategy.AzureAD do
   @moduledoc """
-  Azure AD OAuth 2.0 strategy.
+  Azure Active Directory OpenID Connect strategy.
 
   ## Configuration
 
+  - `:client_id` - The OAuth2 client id, required
   - `:tenant_id` - The Azure tenant ID, optional, defaults to `common`
-  - `:resource` - The Azure resource, optional, defaults to `https://graph.microsoft.com/`
+  - `:nonce` - The session based nonce, required
+  - `:resource` - The Azure resource, optional, defaults to
+    `https://graph.microsoft.com/`
 
-  See `Assent.Strategy.OAuth2` for more.
+  See `Assent.Strategy.OIDC` for more.
+
+  ## Nonce
+
+  You must provide a `:nonce` in your config. This nonce has to be stored in
+  the current session (e.g. as a HttpOnly session cookie). A random value
+  generator could look like this:
+
+      16
+      |> :crypto.strong_rand_bytes()
+      |> Base.encode64(padding: false)
+
+  Store the value before calling the `authorize_url/2` and fetch the value
+  before calling `callback/3`.
 
   ## Usage
 
       config = [
         client_id: "REPLACE_WITH_CLIENT_ID",
-        client_secret: "REPLACE_WITH_CLIENT_SECRET"
+        nonce: "DYNAMICALLY_REPLACE_WITH_SESSION_NONCE"
       ]
 
   A tenant id can be set to limit scope of users who can get access (defaults
@@ -21,8 +37,7 @@ defmodule Assent.Strategy.AzureOAuth2 do
 
       config = [
         client_id: "REPLACE_WITH_CLIENT_ID",
-        client_secret: "REPLACE_WITH_CLIENT_SECRET",
-        tenant_id: "8eaef023-2b34-4da1-9baa-8bc8c9d6a490"
+        tenant_id: "REPLACE_WITH_TENANT_ID"
       ]
 
   The resource that client should pull a token for defaults to
@@ -31,19 +46,17 @@ defmodule Assent.Strategy.AzureOAuth2 do
 
       config = [
         client_id: "REPLACE_WITH_CLIENT_ID",
-        client_secret: "REPLACE_WITH_CLIENT_SECRET",
-        tenant_id: "8eaef023-2b34-4da1-9baa-8bc8c9d6a490",
+        tenant_id: "REPLACE_WITH_TENANT_ID",
         resource: "https://service.contoso.com/"
       ]
 
   ## Setting up Azure AD
 
   Login to Azure, and set up a new application:
-  https://docs.microsoft.com/en-us/azure/active-directory/develop/v1-protocols-oauth-code#register-your-application-with-your-ad-tenant
+  https://docs.microsoft.com/en-us/azure/active-directory/develop/v1-protocols-openid-connect-code#register-your-application-with-your-ad-tenant
 
   * `client_id` is the "Application ID".
-  * `client_secret` has to be created with a new key for the application.
-  * The callback URL should be added to Reply URL's for the application.
+  * The callback URL should be added to Redirect URI for the application.
   * "Sign in and read user profile" permission has to be enabled.
 
   ### App ID URI for `resource`
@@ -52,7 +65,7 @@ defmodule Assent.Strategy.AzureOAuth2 do
   Azure Active Directory, click Application registrations, open the
   application's Settings page, then click Properties.
   """
-  use Assent.Strategy.OAuth2.Base
+  use Assent.Strategy.OIDC.Base
 
   alias Assent.Config
 
@@ -62,11 +75,9 @@ defmodule Assent.Strategy.AzureOAuth2 do
     resource  = Config.get(config, :resource, "https://graph.microsoft.com/")
 
     [
-      site: "https://login.microsoftonline.com",
-      authorize_url: "/#{tenant_id}/oauth2/authorize",
-      token_url: "/#{tenant_id}/oauth2/token",
-      authorization_params: [response_mode: "query", response_type: "code", resource: resource],
-      auth_method: :client_secret_post
+      site: "https://login.microsoftonline.com/#{tenant_id}/v2.0",
+      authorization_params: [response_type: "id_token code", resource: resource],
+      client_auth_method: :client_secret_post
     ]
   end
 
