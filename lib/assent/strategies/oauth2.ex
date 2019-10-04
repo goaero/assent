@@ -63,7 +63,7 @@ defmodule Assent.Strategy.OAuth2 do
   @behaviour Assent.Strategy
 
   alias Assent.Strategy, as: Helpers
-  alias Assent.{CallbackCSRFError, CallbackError, Config, HTTPAdapter.HTTPResponse, RequestError}
+  alias Assent.{CallbackCSRFError, CallbackError, Config, HTTPAdapter.HTTPResponse, JWTAdapter, RequestError}
 
   @doc """
   Generate authorization URL for request phase.
@@ -166,7 +166,7 @@ defmodule Assent.Strategy.OAuth2 do
   defp authentication_params(:private_key_jwt, config) do
     alg = Config.get(config, :jwt_algorithm, "RS256")
 
-    with {:ok, pem}             <- __load_private_key__(config),
+    with {:ok, pem}             <- JWTAdapter.load_private_key(config),
          {:ok, _private_key_id} <- Config.fetch(config, :private_key_id) do
       jwt_authentication_params(alg, pem, config)
     end
@@ -199,14 +199,6 @@ defmodule Assent.Strategy.OAuth2 do
         "iat" => timestamp,
         "exp" => timestamp + 60
       }}
-    end
-  end
-
-  @doc false
-  def __load_private_key__(config) do
-    case Config.fetch(config, :private_key_path) do
-      {:ok, path}    -> File.read(path)
-      {:error, _any} -> Config.fetch(config, :private_key)
     end
   end
 

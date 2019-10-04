@@ -40,7 +40,7 @@ defmodule Assent.Strategy.Apple do
   """
   use Assent.Strategy.OAuth2.Base
 
-  alias Assent.{Config, Strategy.OAuth2, Strategy.OAuth2.Base}
+  alias Assent.{Config, JWTAdapter, Strategy.OAuth2.Base}
 
   @spec default_config(Config.t()) :: Config.t()
   def default_config(_config) do
@@ -62,28 +62,36 @@ defmodule Assent.Strategy.Apple do
     end
   end
 
+  @jwt_expiration_seconds 600
+
   def gen_client_secret(config) do
     config =
       config
       |> default_config()
       |> Keyword.merge(config)
 
-    with {:ok, site}            <- Config.fetch(config, :site),
-         {:ok, client_id}       <- Config.fetch(config, :client_id),
-         {:ok, team_id}         <- Config.fetch(config, :team_id),
-         {:ok, _private_key_id} <- Config.fetch(config, :private_key_id),
-         {:ok, private_key}     <- OAuth2.__load_private_key__(config) do
+    with {:ok, site}        <- Config.fetch(config, :site),
+         {:ok, client_id}   <- Config.fetch(config, :client_id),
+         {:ok, team_id}     <- Config.fetch(config, :team_id),
+         :ok                <- ensure_private_key_id(config),
+         {:ok, private_key} <- JWTAdapter.load_private_key(config) do
 
       timestamp = DateTime.to_unix(DateTime.utc_now())
-      claims  = %{
+      claims    = %{
         "aud" => site,
         "iss" => team_id,
         "sub" => client_id,
         "iat" => timestamp,
-        "exp" => timestamp + 600
+        "exp" => timestamp + @jwt_expiration_seconds
       }
 
       Helpers.sign_jwt(claims, "ES256", private_key, config)
+    end
+  end
+
+  defp ensure_private_key_id(config) do
+    with {:ok, _private_key_id} <- Config.fetch(config, :private_key_id) do
+      :ok
     end
   end
 
