@@ -42,6 +42,7 @@ defmodule Assent.Strategy.AppleTest do
     assert {:ok, %{url: url}} = Apple.authorize_url(config)
     assert url =~ "/auth/authorize"
     assert url =~ "response_mode=form_post"
+    assert url =~ "scope=email"
   end
 
   if :crypto.supports()[:curves] do

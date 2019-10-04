@@ -37,6 +37,9 @@ defmodule Assent.Strategy.Apple do
   You can generate a state by calling:
 
       {:ok, %{session_params: %{state: state}}} = Assent.Strategy.Apple.authorize_url(config)
+
+  See https://developer.apple.com/documentation/signinwithapplejs/configuring_your_webpage_for_sign_in_with_apple
+  for more.
   """
   use Assent.Strategy.OAuth2.Base
 

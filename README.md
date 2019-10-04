@@ -10,6 +10,7 @@ Multi-provider authentication framework.
   * OAuth 1.0 - `Assent.Strategy.OAuth`
   * OAuth 2.0 - `Assent.Strategy.OAuth2`
 * Includes the following provider strategies:
+  * Apple Sign In - `Assent.Strategy.Apple`
   * Auth0 - `Assent.Strategy.Auth0`
   * Azure AD - `Assent.Strategy.AzureOauth2`
   * Basecamp - `Assent.Strategy.Basecamp`
