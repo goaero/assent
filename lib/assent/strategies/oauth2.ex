@@ -121,6 +121,11 @@ defmodule Assent.Strategy.OAuth2 do
   @impl true
   @spec callback(Config.t(), map(), atom()) :: {:ok, %{user: map(), token: map()}} | {:error, term()}
   def callback(config, params, strategy \\ __MODULE__) do
+    config = if Config.get(config, :authorization_params, %{})[:redirect_uri] do
+      Keyword.replace!(config, :redirect_uri, Config.get(config, :authorization_params, %{})[:redirect_uri])
+    else
+      config
+    end
     with {:ok, session_params} <- Config.fetch(config, :session_params),
          :ok                   <- check_error_params(params),
          {:ok, code}           <- fetch_code_param(params),
